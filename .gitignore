@@ -1,0 +1,3 @@
+*.o
+limit_syscalls
+limit_syscalls_static
