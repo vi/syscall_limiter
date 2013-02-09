@@ -1,10 +1,15 @@
-This program allows user to set up simple [seccomp][1] filter that limits which syscalls can be called. All the rest syscalls return pre-defined error value `Channel number out of range`.
+This program allows user to set up simple [seccomp][1] filter that limits 
+which syscalls can be called. All the rest syscalls return pre-defined error 
+value `Channel number out of range`.
 
 The supplied `monitor.sh` script assists executing of binaries under strace for automatic creating of the allowed syscalls list.
 
-This program uses [libseccomp][2] library.
+This program uses [libseccomp][2] library. 
+The program supports setting comparator for syscall arguments and 
+specifying alternative default or syscall actions; for simple version see 
+[nocreep][5] branch.
 
-Here is pre-built static x86 binary: [limit_syscalls_static][3].
+Here is pre-built static simple x86 binary: [limit_syscalls_static][3].
 
 Examples
 ===
@@ -17,6 +22,13 @@ $ ./limit_syscalls
 Usage: limit_syscalls syscall1 syscall2 ... syscallN -- program [arguments]
 Example:
    limit_syscalls execve exit write read open close mmap2  fstat64 access  mprotect set_thread_area -- /bin/echo qqq
+Advanced:
+   LIMIT_SYSCALLS_DEFAULT_ACTION={a,k,eN} - by default allow, kill or return error N
+   some_syscall,A0>=3,A4<<1000,A1!=4,A2&&0x0F==0x0F - compare arguments
+   some_syscall,{a,k,eN} - allow, kill or return error N for this rule
+Some more example:
+    LIMIT_SYSCALLS_DEFAULT_ACTION=a  limit_syscalls  'write,A0==1,e0' -- /usr/bin/printf --help
+     (this makes write to stdout in /usr/bin/printf silently fail, looping it)
    
    
 $ ./limit_syscalls execve exit write read open close mmap2  fstat64 access  mprotect set_thread_area -- /bin/echo qqq
@@ -73,3 +85,4 @@ $ # firefox seems to be working although
 [1]:http://en.wikipedia.org/wiki/Seccomp
 [2]:http://sourceforge.net/projects/libseccomp/
 [3]:http://vi-server.org/pub/limit_syscalls_static
+[5]:https://github.com/vi/syscall_limiter/tree/nocreep
