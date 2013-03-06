@@ -11,6 +11,15 @@ specifying alternative default or syscall actions; for simple version see
 
 Here is pre-built static simple x86 binary: [limit_syscalls_static][3].
 
+Note that rules for syscall_limiter are not very versatile. 
+There are inherent limitations what they can't do 
+(for example, dereference memory or be stateful). 
+To address this, you can "ban too much", but also provide external helper that will, 
+for example, open files or sockets and send them using SCM_RIGHTS to us, implementing 
+more sophisticated security checks on the way. [Seccomp-nurse][6] uses this approach. 
+With syscall_limiter you can reduce the amount of what should be helped externally and access helper in more ways.
+LD_PRELOAD approach can be used to detour system functions to our helper. This way we will have something in middle between seccomp-nurse and pure-BPF-seccomp-no-helper approaches: some syscalls are just banned, some are just allowed and some are redirected to helper.
+
 Examples
 ===
 
@@ -86,3 +95,4 @@ $ # firefox seems to be working although
 [2]:http://sourceforge.net/projects/libseccomp/
 [3]:http://vi-server.org/pub/limit_syscalls_static
 [5]:https://github.com/vi/syscall_limiter/tree/nocreep
+[6]:http://chdir.org/~nico/seccomp-nurse/
