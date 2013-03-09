@@ -22,7 +22,16 @@ int serve(int socket, int syncsocket) {
         read(socket, &r, sizeof(r));
         r.pathname[PATH_MAX-1]=0;
         
-        int ret = open(r.pathname, r.flags, r.mode);
+        errno=0;
+        if(strncmp(r.pathname, "/tmp", 4)) errno=EACCES;
+        if(strstr(r.pathname, "..")) errno=EACCES;
+        
+        int ret;
+        if (!errno) {
+            ret = open(r.pathname, r.flags, r.mode);
+        } else {
+            ret = -1;
+        }
         if(ret!=-1) {
             send_fd(socket, ret);
             close(ret);

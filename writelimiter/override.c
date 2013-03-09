@@ -48,11 +48,10 @@ int open(const char *pathname, int flags, mode_t mode) {
         orig_open = dlsym(RTLD_NEXT, "open");
     }
     
-    if(!strncmp(pathname,"/tmp", 4)) {
+    int ret = (*orig_open)(pathname, flags, mode);
+    if (ret==-1) {
         return remote_open(pathname, flags, mode);
     }
-    
-    int ret = (*orig_open)(pathname, flags, mode);
     return ret;
 }
 
@@ -61,10 +60,10 @@ int open64(const char *pathname, int flags, mode_t mode) {
         orig_open64 = dlsym(RTLD_NEXT, "open64");
     }
     
-    if(!strncmp(pathname,"/tmp", 4)) {
+    int ret = (*orig_open64)(pathname, flags, mode);
+    if (ret==-1) {
         return remote_open(pathname, flags, mode);
     }
-    int ret = (*orig_open64)(pathname, flags, mode);
     return ret;
 }
 
@@ -73,10 +72,10 @@ int creat(const char *pathname, mode_t mode) {
         orig_creat = dlsym(RTLD_NEXT, "creat");
     }
     
-    if(!strncmp(pathname,"/tmp", 4)) {
+    int ret = (*orig_creat)(pathname, mode);
+    if (ret==-1) {
         return remote_open(pathname, O_CREAT|O_WRONLY|O_TRUNC, mode);
     }
-    int ret = (*orig_creat)(pathname, mode);
     return ret;    
 }
 
@@ -85,9 +84,9 @@ int creat64(const char *pathname, mode_t mode) {
         orig_creat64 = dlsym(RTLD_NEXT, "creat64");
     }
     
-    if(!strncmp(pathname,"/tmp", 4)) {
+    int ret = (*orig_creat64)(pathname, mode);
+    if (ret==-1) {
         return remote_open(pathname, O_CREAT|O_WRONLY|O_TRUNC, mode);
     }
-    int ret = (*orig_creat64)(pathname, mode);
     return ret;    
 }
