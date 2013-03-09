@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export LIMIT_SYSCALLS_DEFAULT_ACTION=a
+
+./writelimiter_broker /usr/bin/env LD_PRELOAD=`pwd`/libwritelimiter.so ../limit_syscalls   "open,A2&&0x02==0x02,e33" -- "$@"

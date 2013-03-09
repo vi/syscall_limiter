@@ -1,0 +1,10 @@
+Prototype of writelimiter:
+    syscall_limiter forbids using open with writing flag,
+    libwritelimiter.so redirects failed opens to writelimiter_broker
+    writelimiter_broker does the actual open and sends FD into sandbox
+    
+Current limitations:
+1. Only open and creat functions are considered
+2. Access only to /tmp, using absolute pathnames
+3. No protection against ../../..
+4. Using hardcoded FD numbers: 33 and 34
