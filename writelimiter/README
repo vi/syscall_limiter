@@ -10,7 +10,6 @@ Current limitations:
 4. Using hardcoded FD numbers: 33 and 34
 5. After finishing, writelimiter_broker stays around waiting forever
 6. Tested only on my system. 
-    "open,A2&&0x02==0x02,e33" argument for limit_sysalls is determined by shotgun debugging.
 
 Example:
 $ ./writelimiter /bin/bash -c "echo qqq > www"
