@@ -31,8 +31,9 @@ int remote_open(const char *pathname, int flags, mode_t mode) {
     read(34, buf, 6);
 
     struct request r;
-    r.flags = flags;
-    r.mode = mode;
+    r.operation = 'o';
+    r.open.flags = flags;
+    r.open.mode = mode;
     strncpy(r.pathname, pathname, PATH_MAX);
     write(33, &r, sizeof(r));
     int ret = recv_fd(33);

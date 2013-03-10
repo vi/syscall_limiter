@@ -1,5 +1,13 @@
 #!/bin/bash
 
+POLICY_PROG="$1";
+shift
+
+if [ -z "$1" ]; then
+    echo "Usage: ./writelimiter policy_commandline argv...\n"
+    exit 1
+fi
+
 export LIMIT_SYSCALLS_DEFAULT_ACTION=a
 
-./writelimiter_broker /usr/bin/env LD_PRELOAD=`pwd`/libwritelimiter.so ../limit_syscalls    'open,A1&&0x03==0x01,e1' 'open,A1&&0x03==0x02,e1' -- "$@"
+./writelimiter_broker "$POLICY_PROG" /usr/bin/env LD_PRELOAD=`pwd`/libwritelimiter.so ../limit_syscalls    'open,A1&&0x03==0x01,e1' 'open,A1&&0x03==0x02,e1' -- "$@"

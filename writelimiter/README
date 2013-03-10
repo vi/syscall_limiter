@@ -1,21 +1,27 @@
 Prototype of writelimiter:
     syscall_limiter forbids using open with writing flag,
     libwritelimiter.so redirects failed opens to writelimiter_broker
-    writelimiter_broker checks path, does the actual open and sends FD into sandbox
+    writelimiter_broker consults with policy_prog and does the actual open and sends FD into sandbox
     
 Current limitations:
 1. Only open and creat functions are considered
-2. Access only to /tmp, using absolute pathnames
-3. Security is not thought thought
-4. Using hardcoded FD numbers: 33 and 34
-5. After finishing, writelimiter_broker stays around waiting forever
-6. Tested only on my system. 
+2. Security is not thought thought
+3. Using hardcoded FD numbers: 33 and 34
+4. After finishing, writelimiter_broker stays around waiting forever
+5. Tested only on my system. 
 
 Example:
-$ ./writelimiter /bin/bash -c "echo qqq > www"
+$ POLICY="perl -ne '
+    INIT{$|=1;}  
+    print 0 and next if /\.\./; 
+    print 1 and next if m@/tmp/@; 
+    print 1 and next if m@^/dev/null@;  
+    print 0 '"
+$ ./writelimiter "$POLICY"  /bin/bash -c 'echo qqq > www'
 /bin/bash: www: Permission denied
-$ ./writelimiter /bin/bash -c "echo qqq > /tmp/www"
-$ ./writelimiter /bin/bash -c "echo qqq > /tmp/../tmp/www"
+$ ./writelimiter "$POLICY"  /bin/bash -c 'echo qqq > /tmp/www'
+$ ./writelimiter "$POLICY"  /bin/bash -c 'echo qqq > /tmp/../tmp/www'
 /bin/bash: /tmp/../tmp/www: Permission denied
-$ killall writelimiter_broker
-
+$ ./writelimiter "$POLICY"  /bin/bash -c 'echo qqq > /dev/null'
+$ ./writelimiter "$POLICY"  /bin/bash -c 'echo qqq > /dev/zero'
+/bin/bash: /dev/zero: Permission denied
