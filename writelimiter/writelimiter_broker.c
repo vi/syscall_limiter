@@ -21,6 +21,8 @@ int safer_read(int f, char* b, int n);
 
 
 int serve(int socket, int syncsocket, int policy_in, int policy_out) {
+    char additional_path[PATH_MAX];
+    memset(additional_path, 0, PATH_MAX);
     for(;;) {
         write(syncsocket, "grant\n", 6); /* to prevent multiple clients messing with each other */
         
@@ -43,31 +45,63 @@ int serve(int socket, int syncsocket, int policy_in, int policy_out) {
         }
         
         if (errno) {
-            write(socket, "X", 1);
             write(socket, &errno, sizeof(errno));
             continue;
         }
         
+        errno=0;
+        int ret;
         switch (r.operation) {
-        case 'o': {
-            errno=0;            
-            
-            int ret;
-            if (!errno) {
-                ret = open(r.pathname, r.open.flags, r.open.mode);
-            } else {
-                ret = -1;
-            }
-            if(ret!=-1) {
-                send_fd(socket, ret);
-                close(ret);
-            } else {
-                write(socket, "X", 1);
-                write(socket, &errno, sizeof(errno));
-            }
+        case 'o': {        
+            ret = open(r.pathname, r.flags, r.mode);
+        } break;
+        case 'u': {
+            unlink(r.pathname);
+        } break;
+        case 'r': {
+            rmdir(r.pathname);
+        } break;
+        case 'A': {
+            /* Additinal path for moving and linking */
+            memcpy(additional_path, r.pathname, PATH_MAX);
+        } break;
+        case 'l': {
+            if(!additional_path[0]) errno=EINVAL;
+            else {
+                link(additional_path, r.pathname);
+            }    
+        } break;
+        case 's': {
+            if(!additional_path[0]) errno=EINVAL;
+            else {
+                symlink(additional_path, r.pathname);
+            }    
+        } break;
+        case 'n': {
+            if(!additional_path[0]) errno=EINVAL;
+            else {
+                rename(additional_path, r.pathname);
+            }  
+        } break;
+        case 'm': {
+            mkdir(r.pathname, r.mode);
+        } break;
+        case 'c': {
+            chmod(r.pathname, r.mode);
+        } break;
+        default: {
+            errno = ENOSYS;      
         }
         } // switch
+    
+        write(socket, &errno, sizeof(errno));    
+        
+        if(r.operation == 'o' && !errno) {
+            send_fd(socket, ret);
+            close(ret);
+        }
     }
+
     return 0;
 }
 

@@ -32,8 +32,8 @@ int remote_open(const char *pathname, int flags, mode_t mode) {
 
     struct request r;
     r.operation = 'o';
-    r.open.flags = flags;
-    r.open.mode = mode;
+    r.flags = flags;
+    r.mode = mode;
     
     if(pathname[0]!='/') {
         // relative path
@@ -54,10 +54,12 @@ int remote_open(const char *pathname, int flags, mode_t mode) {
     }
     
     
+    int ret = -1;
+    
     write(33, &r, sizeof(r));
-    int ret = recv_fd(33);
-    if (ret==-1) {
-        read(33, &errno, sizeof(errno));
+    read(33, &errno, sizeof(errno));
+    if (!errno) {
+        ret = recv_fd(33);
     }
     return ret;
 }
