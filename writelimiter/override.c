@@ -34,7 +34,26 @@ int remote_open(const char *pathname, int flags, mode_t mode) {
     r.operation = 'o';
     r.open.flags = flags;
     r.open.mode = mode;
-    strncpy(r.pathname, pathname, PATH_MAX);
+    
+    if(pathname[0]!='/') {
+        // relative path
+        char* ret = getcwd(r.pathname, sizeof(r.pathname));
+        if (!ret) {
+            return -1;
+        }
+        int l = strlen(r.pathname);
+        if (l==PATH_MAX) {
+            errno=ERANGE;
+            return -1;
+        }
+        r.pathname[l]='/';
+        strncpy(r.pathname+l+1, pathname, PATH_MAX-l-1);
+    } else {
+        // absolute path
+        strncpy(r.pathname, pathname, PATH_MAX);
+    }
+    
+    
     write(33, &r, sizeof(r));
     int ret = recv_fd(33);
     if (ret==-1) {
