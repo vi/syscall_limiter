@@ -20,4 +20,37 @@ export LIMIT_SYSCALLS_DEFAULT_ACTION=a
             'open,A1&&0x40==0x40,e1' \
             rmdir,e1 \
             mkdir,e1 \
+            creat,e1 \
+            unlinkat,e1 \
+            openat,e1 \
+            renameat,e1 \
+            mkdirat,e1 \
+            linkat,e1 \
+            symlink,e1 \
+            link,e1 \
+            symlink,e1 \
+            chmod,e1 \
+            unlink,e1 \
+            rename,e1 \
+            mknod,e1 \
+            mknodat,e1 \
+            utime,e1 \
+            utimes,e1 \
+            utimensat,e1 \
+            futimesat,e1 \
+            removexattr,e1 \
+            fremovexattr,e1 \
+            lremovexattr,e1 \
+            setxattr,e1 \
+            lsetxattr,e1 \
+            fsetxattr,e1 \
+            lchown,e1 \
+            lchown32,e1 \
+            fchmod,e1 \
+            fchmodat,e1 \
+            fchown,e1 \
+            fchown32,e1 \
+            fchownat,e1 \
+            chown,e1 \
+            chown32,e1 \
             -- "$@"
