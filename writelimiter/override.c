@@ -81,54 +81,29 @@ static int remote_open(const char *pathname, int flags, mode_t mode) {
 }
 
 
-static int (*orig_open)(const char *pathname, int flags, mode_t mode) = NULL;
-int open(const char *pathname, int flags, mode_t mode) {
-    if(!orig_open) {
-        orig_open = dlsym(RTLD_NEXT, "open");
-    }
-    
-    int ret = (*orig_open)(pathname, flags, mode);
-    if (ret==-1) {
-        return remote_open(pathname, flags, mode);
-    }
-    return ret;
-}
+static int remote_open64(const char *pathname, int flags, mode_t mode) {
+    return remote_open(pathname, flags, mode); }
+static int remote_creat(const char *pathname, mode_t mode) { 
+    return remote_open(pathname, O_CREAT|O_WRONLY|O_TRUNC, mode); }
+static int remote_creat64(const char *pathname, mode_t mode) { 
+    return remote_open(pathname, O_CREAT|O_WRONLY|O_TRUNC, mode); }
 
-static int (*orig_open64)(const char *pathname, int flags, mode_t mode) = NULL;
-int open64(const char *pathname, int flags, mode_t mode) {
-    if(!orig_open64) {
-        orig_open64 = dlsym(RTLD_NEXT, "open64");
-    }
-    
-    int ret = (*orig_open64)(pathname, flags, mode);
-    if (ret==-1) {
-        return remote_open(pathname, flags, mode);
-    }
-    return ret;
-}
 
-static int (*orig_creat)(const char *pathname, mode_t mode) = NULL;
-int creat(const char *pathname, mode_t mode) {
-    if(!orig_creat) {
-        orig_creat = dlsym(RTLD_NEXT, "creat");
-    }
-    
-    int ret = (*orig_creat)(pathname, mode);
-    if (ret==-1) {
-        return remote_open(pathname, O_CREAT|O_WRONLY|O_TRUNC, mode);
-    }
-    return ret;    
-}
 
-static int (*orig_creat64)(const char *pathname, mode_t mode) = NULL;
-int creat64(const char *pathname, mode_t mode) {
-    if(!orig_creat64) {
-        orig_creat64 = dlsym(RTLD_NEXT, "creat64");
+#define OVERIDE_TEMPLATE(name, signature, sigargs) \
+    static int (*orig_##name) signature = NULL; \
+    int name signature { \
+        if(!orig_##name) { \
+            orig_##name = dlsym(RTLD_NEXT, "open"); \
+        } \
+        \
+        int ret = (*orig_##name) sigargs; \
+        if (ret!=-1) return ret; \
+        return remote_##name sigargs; \
     }
-    
-    int ret = (*orig_creat64)(pathname, mode);
-    if (ret==-1) {
-        return remote_open(pathname, O_CREAT|O_WRONLY|O_TRUNC, mode);
-    }
-    return ret;    
-}
+
+
+OVERIDE_TEMPLATE(open, (const char *pathname, int flags, mode_t mode), (pathname, flags, mode))
+OVERIDE_TEMPLATE(open64, (const char *pathname, int flags, mode_t mode), (pathname, flags, mode))
+OVERIDE_TEMPLATE(creat, (const char *pathname,  mode_t mode), (pathname, mode))
+OVERIDE_TEMPLATE(creat64, (const char *pathname, mode_t mode), (pathname, mode))
