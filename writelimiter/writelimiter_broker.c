@@ -27,8 +27,13 @@ int serve(int socket, int syncsocket, int policy_in, int policy_out) {
         write(syncsocket, "grant\n", 6); /* to prevent multiple clients messing with each other */
         
         struct request r;
-        read(socket, &r, sizeof(r));
+        int ret = read(socket, &r, sizeof(r));
         r.pathname[PATH_MAX-1]=0;
+        
+        if (ret==0) break;
+        if (ret==-1 && errno==EINTR) continue;
+        if (ret==-1 && errno==EAGAIN) continue;
+        if (ret==-1) break;
         
         errno=0;
         
@@ -50,7 +55,7 @@ int serve(int socket, int syncsocket, int policy_in, int policy_out) {
         }
         
         errno=0;
-        int ret;
+        ret=-1;
         switch (r.operation) {
         case 'o': {        
             ret = open(r.pathname, r.flags, r.mode);
@@ -112,14 +117,6 @@ int main(int argc, char* argv[], char* envp[]) {
         return 1;
     }
     
-    int sockets[2] = {-1, -1};
-    int syncsockets[2] = {-1,-1};
-    socketpair(AF_UNIX, SOCK_DGRAM, 0, syncsockets);
-    socketpair(AF_UNIX, SOCK_DGRAM, 0, sockets);
-    if (sockets[0]==-1) {
-        perror("socketpair");
-        return 1;
-    }
     
     struct popen2 policyprog;
     int ret = popen2(argv[1], &policyprog);
@@ -128,6 +125,15 @@ int main(int argc, char* argv[], char* envp[]) {
         return 1;
     }    
     
+    int sockets[2] = {-1, -1};
+    int syncsockets[2] = {-1,-1};
+    socketpair(AF_UNIX, SOCK_SEQPACKET, 0, syncsockets);
+    socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sockets);
+    if (sockets[0]==-1) {
+        perror("socketpair");
+        return 1;
+    }
+    
     int childpid = fork();
     
     if (!childpid) {
@@ -135,6 +141,7 @@ int main(int argc, char* argv[], char* envp[]) {
         close(syncsockets[0]);
         return serve(sockets[1], syncsockets[1], policyprog.to_child, policyprog.from_child); 
     }
+
     close(sockets[1]);
     close(syncsockets[1]);
     dup2(sockets[0], 33);
