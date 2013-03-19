@@ -20,6 +20,8 @@ more sophisticated security checks on the way. [Seccomp-nurse][6] uses this appr
 With syscall_limiter you can reduce the amount of what should be helped externally and access helper in more ways.
 LD_PRELOAD approach can be used to detour system functions to our helper. This way we will have something in middle between seccomp-nurse and pure-BPF-seccomp-no-helper approaches: some syscalls are just banned, some are just allowed and some are redirected to helper.
 
+See writelimiter subdirectory for example of such approach. It allows users to start programs with only specified parts of filesystem being writable.
+
 Examples
 ===
 
