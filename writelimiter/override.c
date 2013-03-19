@@ -81,7 +81,8 @@ static int perform_request(const struct request* r) {
     }
 }
 
-static int remote_open(const char *pathname, int flags, mode_t mode) {
+
+static int remote_openat(int dirfd, const char *pathname, int flags, mode_t mode) {
     receive_ticket();
 
     struct request r;
@@ -89,13 +90,19 @@ static int remote_open(const char *pathname, int flags, mode_t mode) {
     r.flags = flags;
     r.mode = mode;
     
-    if (absolutize_path(&r, pathname, AT_FDCWD) == -1) return -1;         
+    if (absolutize_path(&r, pathname, dirfd) == -1) return -1;         
     
     return perform_request(&r);
 }
 
+static int remote_open(const char *pathname, int flags, mode_t mode) {
+    return remote_openat(AT_FDCWD, pathname, flags, mode);
+}
+
 static int remote_open64(const char *pathname, int flags, mode_t mode) {
     return remote_open(pathname, flags, mode); }
+static int remote_openat64(int dirfd, const char *pathname, int flags, mode_t mode) {
+    return remote_openat(dirfd, pathname, flags, mode); }
 static int remote_creat(const char *pathname, mode_t mode) { 
     return remote_open(pathname, O_CREAT|O_WRONLY|O_TRUNC, mode); }
 static int remote_creat64(const char *pathname, mode_t mode) { 
@@ -278,6 +285,8 @@ static int remote_mkfifo(const char *pathname, mode_t mode) {
 
 OVERIDE_TEMPLATE(open, (const char *pathname, int flags, mode_t mode), (pathname, flags, mode))
 OVERIDE_TEMPLATE(open64, (const char *pathname, int flags, mode_t mode), (pathname, flags, mode))
+OVERIDE_TEMPLATE(openat, (int dirfd, const char *pathname, int flags, mode_t mode), (dirfd, pathname, flags, mode))
+OVERIDE_TEMPLATE(openat64, (int dirfd, const char *pathname, int flags, mode_t mode), (dirfd, pathname, flags, mode))
 OVERIDE_TEMPLATE(creat, (const char *pathname,  mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(creat64, (const char *pathname, mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(mkdir, (const char *pathname,  mode_t mode), (pathname, mode))
