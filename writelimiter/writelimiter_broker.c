@@ -23,8 +23,12 @@ int safer_read(int f, char* b, int n);
 int serve(int socket, int syncsocket, int policy_in, int policy_out) {
     char additional_path[PATH_MAX];
     memset(additional_path, 0, PATH_MAX);
+    int noticket = 0; /* after 'A' operation */
     for(;;) {
-        write(syncsocket, "grant\n", 6); /* to prevent multiple clients messing with each other */
+        if (!noticket) {
+            write(syncsocket, "grant\n", 6); /* to prevent multiple clients messing with each other */
+        }
+        noticket=0;
         
         struct request r;
         int ret = read(socket, &r, sizeof(r));
@@ -69,11 +73,14 @@ int serve(int socket, int syncsocket, int policy_in, int policy_out) {
         case 'A': {
             /* Additinal path for moving and linking */
             memcpy(additional_path, r.pathname, PATH_MAX);
+            noticket=1; /* some operation must follow */
+            /* Note: this scheme is unreliable.
+                Kill sender at this point and get hung broker */
         } break;
         case 'l': {
             if(!additional_path[0]) errno=EINVAL;
             else {
-                link(additional_path, r.pathname);
+                linkat(AT_FDCWD, additional_path, AT_FDCWD, r.pathname, r.flags);
             }    
         } break;
         case 's': {
@@ -93,6 +100,9 @@ int serve(int socket, int syncsocket, int policy_in, int policy_out) {
         } break;
         case 'c': {
             chmod(r.pathname, r.mode);
+        } break;
+        case 'k': {
+            mknod(r.pathname, r.mode, r.dev);
         } break;
         default: {
             errno = ENOSYS;      

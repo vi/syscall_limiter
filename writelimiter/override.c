@@ -113,6 +113,18 @@ static int remote_mkdir(const char *pathname, mode_t mode) {
     return perform_request(&r);
 }
 
+static int remote_chmod(const char *pathname, mode_t mode) { 
+    receive_ticket();
+
+    struct request r;
+    r.operation = 'c';
+    r.mode = mode;
+    
+    if (absolutize_path(&r, pathname, AT_FDCWD) == -1) return -1;  
+    
+    return perform_request(&r);
+}
+
 static int remote_rmdir(const char *pathname) { 
     receive_ticket();
 
@@ -152,7 +164,104 @@ static int remote_unlinkat (int dirfd, const char *pathname, int flags) {
     return ret;
 }
 
+static int remote_renameat(int olddirfd, const char *oldpath,
+                    int newdirfd, const char *newpath) {
+    receive_ticket();
+    
+    struct request r;
+    r.operation = 'A';
+    
+    if (absolutize_path(&r, oldpath, olddirfd) == -1) return -1; 
+       
+    int ret = perform_request(&r);
+    
+    if (ret==-1) return -1;
+        
+    r.operation = 'n';
+    
+    if (absolutize_path(&r, newpath, newdirfd) == -1) {
+        perform_request(&r);
+        return -1;
+    }
+    
+    return perform_request(&r);    
+}
 
+static int remote_rename (const char *oldpath, const char *newpath)  {
+    return remote_renameat(AT_FDCWD, oldpath, AT_FDCWD, newpath);
+}
+
+
+static int remote_symlinkat(const char *oldpath, int newdirfd, const char *newpath) {
+    receive_ticket();
+    
+    struct request r;
+    r.operation = 'A';
+    
+    if (absolutize_path(&r, oldpath, AT_FDCWD) == -1) return -1; 
+       
+    int ret = perform_request(&r);
+    
+    if (ret==-1) return -1;
+        
+    r.operation = 's';
+    
+    if (absolutize_path(&r, newpath, newdirfd) == -1) {
+        perform_request(&r);
+        return -1;
+    }
+    
+    return perform_request(&r);    
+}
+
+static int remote_symlink(const char *oldpath, const char *newpath) {
+    return remote_symlinkat(oldpath, AT_FDCWD, newpath);
+}
+
+
+static int remote_linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
+    receive_ticket();
+    
+    struct request r;
+    r.operation = 'A';
+    
+    if (absolutize_path(&r, oldpath, olddirfd) == -1) return -1; 
+       
+    int ret = perform_request(&r);
+    
+    if (ret==-1) return -1;
+        
+    r.operation = 'l';
+    
+    if (absolutize_path(&r, newpath, newdirfd) == -1) {
+        perform_request(&r);
+        return -1;
+    }
+    
+    r.flags = flags;
+    return perform_request(&r);    
+}
+
+static int remote_link(const char *oldpath, const char *newpath) {
+    return remote_linkat(AT_FDCWD, oldpath, AT_FDCWD, newpath, 0);
+}
+
+static int remote_mknod(const char *pathname, mode_t mode, dev_t dev) {    
+    receive_ticket();
+
+    struct request r;
+    r.operation = 'k';
+    r.mode = mode;
+    r.dev = dev;
+    
+    if (absolutize_path(&r, pathname, AT_FDCWD) == -1) return -1;  
+    
+    return perform_request(&r);
+}
+
+static int remote_mkfifo(const char *pathname, mode_t mode) {    
+    return remote_mknod(pathname, mode|S_IFIFO, 0);
+}
 
 #define OVERIDE_TEMPLATE(name, signature, sigargs) \
     static int (*orig_##name) signature = NULL; \
@@ -172,6 +281,15 @@ OVERIDE_TEMPLATE(open64, (const char *pathname, int flags, mode_t mode), (pathna
 OVERIDE_TEMPLATE(creat, (const char *pathname,  mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(creat64, (const char *pathname, mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(mkdir, (const char *pathname,  mode_t mode), (pathname, mode))
+OVERIDE_TEMPLATE(mknod, (const char *pathname,  mode_t mode, dev_t dev), (pathname, mode, dev))
+OVERIDE_TEMPLATE(mkfifo, (const char *pathname,  mode_t mode), (pathname, mode))
+OVERIDE_TEMPLATE(chmod, (const char *pathname,  mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(rmdir, (const char *pathname), (pathname))
 OVERIDE_TEMPLATE(unlink, (const char *pathname), (pathname))
 OVERIDE_TEMPLATE(unlinkat, (int dirfd, const char *pathname, int flags), (dirfd, pathname, flags))
+OVERIDE_TEMPLATE(rename, (const char *oldpath, const char *newpath), (oldpath, newpath))
+OVERIDE_TEMPLATE(renameat, (int olddirfd, const char *oldpath, int newdirfd, const char *newpath), (olddirfd, oldpath, newdirfd, newpath))
+OVERIDE_TEMPLATE(link, (const char *oldpath, const char *newpath), (oldpath, newpath))
+OVERIDE_TEMPLATE(linkat, (int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags), (olddirfd, oldpath, newdirfd, newpath, flags))
+OVERIDE_TEMPLATE(symlink, (const char *oldpath, const char *newpath), (oldpath, newpath))
+OVERIDE_TEMPLATE(symlinkat, (const char *oldpath, int newdirfd, const char *newpath), (oldpath, newdirfd, newpath))
