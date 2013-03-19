@@ -4,11 +4,10 @@ Prototype of writelimiter:
     writelimiter_broker consults with policy_prog and does the actual open and sends FD into sandbox
     
 Current limitations:
-1. Only open and creat functions are considered
-2. Security is not thought thought
-3. Using hardcoded FD numbers: 33 and 34
-4. After finishing, writelimiter_broker stays around waiting forever
-5. Tested only on my system. 
+1. Security is not thought thought
+2. Using hardcoded FD numbers: 33 and 34
+3. UNIX sockets connections are not monitored
+4. Tested only on my system.
 
 Example:
 $ POLICY="perl -ne '
