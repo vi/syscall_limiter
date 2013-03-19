@@ -23,17 +23,34 @@
 #define SOCKET 33
 #define TICKET_SOCKET 34
 
-static int absolutize_path(struct request *r, const char* pathname) {
+static int absolutize_path(struct request *r, const char* pathname, int dirfd) {
     if(pathname[0]!='/') {
+        int l;
         // relative path
-        char* ret = getcwd(r->pathname, sizeof(r->pathname));
-        if (!ret) {
-            return -1;
-        }
-        int l = strlen(r->pathname);
-        if (l==PATH_MAX) {
-            errno=ERANGE;
-            return -1;
+        if (dirfd == AT_FDCWD) {
+            char* ret = getcwd(r->pathname, sizeof(r->pathname));
+            if (!ret) {
+                return -1;
+            }
+            l = strlen(r->pathname);
+            if (l==PATH_MAX) {
+                errno=ERANGE;
+                return -1;
+            }
+        } else {
+            char proce[128];
+            sprintf(proce, "/proc/self/fd/%d", dirfd);
+            
+            ssize_t ret = readlink(proce, r->pathname, sizeof(r->pathname));
+            
+            if( ret==-1) {
+                /* Let's just assume dirfd is for "/" (as in /bin/rm) */
+                fprintf(stderr, "Warning: can't readlink %s, continuing\n", proce);
+                l=0;
+            } else {
+                l=ret;
+            }
+
         }
         r->pathname[l]='/';
         strncpy(r->pathname+l+1, pathname, PATH_MAX-l-1);
@@ -72,7 +89,7 @@ static int remote_open(const char *pathname, int flags, mode_t mode) {
     r.flags = flags;
     r.mode = mode;
     
-    if (absolutize_path(&r, pathname) == -1) return -1;         
+    if (absolutize_path(&r, pathname, AT_FDCWD) == -1) return -1;         
     
     return perform_request(&r);
 }
@@ -91,7 +108,7 @@ static int remote_mkdir(const char *pathname, mode_t mode) {
     r.operation = 'm';
     r.mode = mode;
     
-    if (absolutize_path(&r, pathname) == -1) return -1;  
+    if (absolutize_path(&r, pathname, AT_FDCWD) == -1) return -1;  
     
     return perform_request(&r);
 }
@@ -102,9 +119,37 @@ static int remote_rmdir(const char *pathname) {
     struct request r;
     r.operation = 'r';
     
-    if (absolutize_path(&r, pathname) == -1) return -1;  
+    if (absolutize_path(&r, pathname, AT_FDCWD) == -1) return -1;  
     
     return perform_request(&r);
+}
+
+static int remote_unlink (const char *pathname) {
+    receive_ticket();
+
+    struct request r;
+    r.operation = 'u';
+    
+    if (absolutize_path(&r, pathname, AT_FDCWD) == -1) return -1;  
+    
+    return perform_request(&r);    
+}
+
+
+static int remote_unlinkat (int dirfd, const char *pathname, int flags) {
+    receive_ticket();
+    
+    struct request r;
+    r.operation = 'u';
+    
+    if (absolutize_path(&r, pathname, dirfd) == -1) return -1;  
+    
+    int ret = perform_request(&r);
+    if (ret == -1 && (flags & AT_REMOVEDIR)) {
+        r.operation='r';
+        ret = perform_request(&r);
+    }
+    return ret;
 }
 
 
@@ -113,7 +158,7 @@ static int remote_rmdir(const char *pathname) {
     static int (*orig_##name) signature = NULL; \
     int name signature { \
         if(!orig_##name) { \
-            orig_##name = dlsym(RTLD_NEXT, "open"); \
+            orig_##name = dlsym(RTLD_NEXT, #name); \
         } \
         \
         int ret = (*orig_##name) sigargs; \
@@ -128,3 +173,5 @@ OVERIDE_TEMPLATE(creat, (const char *pathname,  mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(creat64, (const char *pathname, mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(mkdir, (const char *pathname,  mode_t mode), (pathname, mode))
 OVERIDE_TEMPLATE(rmdir, (const char *pathname), (pathname))
+OVERIDE_TEMPLATE(unlink, (const char *pathname), (pathname))
+OVERIDE_TEMPLATE(unlinkat, (int dirfd, const char *pathname, int flags), (dirfd, pathname, flags))
