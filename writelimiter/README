@@ -4,10 +4,13 @@ Prototype of writelimiter:
     writelimiter_broker consults with policy_prog and does the actual open and sends FD into sandbox
     
 Current limitations:
-1. Security is not thought thought
-2. Using hardcoded FD numbers: 33 and 34
-3. UNIX sockets connections are not monitored
-4. Tested only on my system.
+1. Security is not thought thought yet;
+2. Uses hardcoded FD numbers: 33 and 34;
+3. UNIX sockets connections are not monitored; 
+    read access is just granted everywhere;
+         (we need it to allow dynamically linked binaries to work)
+    execve is allowed everywhere.
+4. Tested mostly on my system.
 
 Example:
 $ POLICY="perl -ne '
