@@ -270,17 +270,49 @@ static int remote_mkfifo(const char *pathname, mode_t mode) {
     return remote_mknod(pathname, mode|S_IFIFO, 0);
 }
 
-#define OVERIDE_TEMPLATE(name, signature, sigargs) \
-    static int (*orig_##name) signature = NULL; \
-    int name signature { \
+/* Taken from musl-0.9.7 */
+static int __fmodeflags(const char *mode)
+{
+        int flags;
+        if (strchr(mode, '+')) flags = O_RDWR;
+        else if (*mode == 'r') flags = O_RDONLY;
+        else flags = O_WRONLY;
+        if (strchr(mode, 'x')) flags |= O_EXCL;
+        if (strchr(mode, 'e')) flags |= O_CLOEXEC;
+        if (*mode != 'r') flags |= O_CREAT;
+        if (*mode == 'w') flags |= O_TRUNC;
+        if (*mode == 'a') flags |= O_APPEND;
+        return flags;
+}
+
+
+
+static FILE* remote_fopen(const char *path, const char *mode) {
+    int flags = __fmodeflags(mode);
+    int ret = remote_open(path, flags|O_LARGEFILE, 0666);
+    if (ret==-1) return NULL;
+    return fdopen(ret, mode);
+}
+
+static FILE* remote_fopen64(const char *path, const char *mode) {
+    return remote_fopen(path, mode);
+}
+
+
+#define OVERIDE_TEMPLATE_I(name, rettype, succcheck, signature, sigargs) \
+    static rettype (*orig_##name) signature = NULL; \
+    rettype name signature { \
         if(!orig_##name) { \
             orig_##name = dlsym(RTLD_NEXT, #name); \
         } \
         \
-        int ret = (*orig_##name) sigargs; \
-        if (ret!=-1) return ret; \
+        rettype ret = (*orig_##name) sigargs; \
+        if (succcheck) return ret; \
         return remote_##name sigargs; \
     }
+
+#define OVERIDE_TEMPLATE(name, signature, sigargs) \
+    OVERIDE_TEMPLATE_I(name, int, ret!=-1, signature, sigargs)
 
 
 OVERIDE_TEMPLATE(open, (const char *pathname, int flags, mode_t mode), (pathname, flags, mode))
@@ -302,3 +334,7 @@ OVERIDE_TEMPLATE(link, (const char *oldpath, const char *newpath), (oldpath, new
 OVERIDE_TEMPLATE(linkat, (int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags), (olddirfd, oldpath, newdirfd, newpath, flags))
 OVERIDE_TEMPLATE(symlink, (const char *oldpath, const char *newpath), (oldpath, newpath))
 OVERIDE_TEMPLATE(symlinkat, (const char *oldpath, int newdirfd, const char *newpath), (oldpath, newdirfd, newpath))
+
+
+OVERIDE_TEMPLATE_I(fopen, FILE*, ret != NULL, (const char *path, const char *mode), (path, mode))
+OVERIDE_TEMPLATE_I(fopen64, FILE*, ret != NULL, (const char *path, const char *mode), (path, mode))
