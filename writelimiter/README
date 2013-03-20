@@ -9,8 +9,9 @@ Current limitations:
 3. UNIX sockets connections are not monitored; 
     read access is just granted everywhere;
          (we need it to allow dynamically linked binaries to work)
-    execve is allowed everywhere.
-4. Tested mostly on my system.
+    execve is allowed everywhere;
+4. Static binaries just won't be able to write to FS;
+5. Tested mostly on my system.
 
 Example:
 $ POLICY="perl -ne '
