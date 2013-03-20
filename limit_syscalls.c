@@ -9,7 +9,7 @@
 
 // https://github.com/vi/syscall_limiter
 
-// Created by Vitaly "_Vi" Shukela; 2013; MIT
+// Created by Vitaly "_Vi" Shukela; 2013; License=MIT
 
 
 /* Workaround missing va_list version of seccomp_rule_add */

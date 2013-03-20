@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 
 
+// Created by Vitaly "_Vi" Shukela; 2013; License=MIT
+
 /* I want only O_CREAT|O_WRONLY|O_TRUNC, not queer open's or creat's signatures */
 //#include <fcntl.h>
 #define _FCNTL_H

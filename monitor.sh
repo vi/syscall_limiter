@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Created by Vitaly "_Vi" Shukela; 2013; License=MIT
+
 if [ -z "$1" ]; then
     echo "Usage: ./monitor.sh program [arguments]"
     echo "It should output the limit_syscalls command pointing with all occured syscall enabled"

@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+// Created by Vitaly "_Vi" Shukela; 2013; License=MIT
+
 //#include <regex.h>
 
 #include "writelimiter.h"
