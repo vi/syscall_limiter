@@ -1,5 +1,5 @@
 Prototype of writelimiter:
-    syscall_limiter forbids using open with writing flag,
+    syscall_limiter forbids using open with writing flag (and other FS-modifying calls),
     libwritelimiter.so redirects failed opens to writelimiter_broker
     writelimiter_broker consults with policy_prog and does the actual open and sends FD into sandbox
     
@@ -7,7 +7,7 @@ Current limitations:
 1. Security is not thought thought yet;
 2. Uses hardcoded FD numbers: 33 and 34;
 3. UNIX sockets connections are not monitored; 
-    read access is just granted everywhere;
+    read, stat, getfdents, etc. access is just granted everywhere;
          (we need it to allow dynamically linked binaries to work)
     execve is allowed everywhere;
 4. Static binaries just won't be able to write to FS;
@@ -17,8 +17,8 @@ Example:
 $ POLICY="perl -ne '
     INIT{$|=1;}  
     print 0 and next if /\.\./; 
-    print 1 and next if m@/tmp/@; 
-    print 1 and next if m@^/dev/null@;  
+    print 1 and next if m@^/tmp/@; 
+    print 1 and next if m@^/dev/null\$@;  
     print 0 '"
 $ ./writelimiter "$POLICY"  /bin/bash -c 'echo qqq > www'
 /bin/bash: www: Permission denied
