@@ -22,6 +22,18 @@ LD_PRELOAD approach can be used to detour system functions to our helper. This w
 
 See writelimiter subdirectory for example of such approach. It allows users to start programs with only specified parts of filesystem being writable.
 
+
+You can use `strace -e raw=somesyscall` to discover syscall parameter numbers and values.
+
+```
+# strace -e mount -e raw=mount /bin/mount -t tmpfs tmp /tmp/foo -o remount,ro
+mount(0x80634c8, 0x80634d8, 0x80634e8, 0xc0ed0021, 0) = 0
+
+# strace -e mount -e raw=mount /bin/mount -t tmpfs tmp /tmp/foo -o remount,rw
+mount(0x80634c8, 0x80634d8, 0x80634e8, 0xc0ed0020, 0) = 0
+```
+
+
 Examples
 ===
 
