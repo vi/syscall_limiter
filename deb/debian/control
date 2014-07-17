@@ -1,0 +1,11 @@
+Source: syscalllimiter
+Section: utils
+Priority: extra
+Maintainer: Vitaly _Vi Shukela <vi0oss@gmail.com>
+Standards-Version: 3.9.3
+Homepage: https://github.com/vi/syscall_limiter.git
+
+Package: syscalllimiter
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libc6
+Description: This program allows user to set up simple [seccomp][1] filter that limits which syscalls can be called.

@@ -1,0 +1,1 @@
+limit_syscalls /usr/bin/
