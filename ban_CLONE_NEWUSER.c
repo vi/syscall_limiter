@@ -34,6 +34,7 @@ int main(int argc, char* argv[], char* envp[]) {
     ret = seccomp_load(ctx);
     if (ret!=0) {
         fprintf(stderr, "seccomp_load returned %d\n", ret);        
+        return 124;
     }
     
     execve(argv[1], argv+1, envp);
