@@ -44,6 +44,8 @@ int main(int argc, char* argv[], char* envp[]) {
         fprintf(stderr, "Some more example:\n");
         fprintf(stderr,"    LIMIT_SYSCALLS_DEFAULT_ACTION=a  limit_syscalls  'write,A0==1,e0' -- /usr/bin/printf --help\n");
         fprintf(stderr,"     (this makes write to stdout in /usr/bin/printf silently fail, looping it)\n");
+        fprintf(stderr, "Restrict user namespace:\n");
+        fprintf(stderr, "   LIMIT_SYSCALLS_DEFAULT_ACTION=a limit_syscalls clone,A0\\&\\&0x10000000==0x10000000,e1 unshare,e1  -- /bin/bash\n");
         return 126;
     }
     

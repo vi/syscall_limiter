@@ -52,6 +52,8 @@ Advanced:
 Some more example:
     LIMIT_SYSCALLS_DEFAULT_ACTION=a  limit_syscalls  'write,A0==1,e0' -- /usr/bin/printf --help
      (this makes write to stdout in /usr/bin/printf silently fail, looping it)
+Restrict user namespace (CLONE_NEWUSER):
+   LIMIT_SYSCALLS_DEFAULT_ACTION=a limit_syscalls clone,A0\&\&0x10000000==0x10000000,e1 unshare,e1  -- /bin/bash
    
    
 $ ./limit_syscalls execve exit write read open close mmap2  fstat64 access  mprotect set_thread_area -- /bin/echo qqq
