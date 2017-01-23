@@ -54,6 +54,7 @@ Some more example:
      (this makes write to stdout in /usr/bin/printf silently fail, looping it)
 Restrict user namespace (CLONE_NEWUSER):
    LIMIT_SYSCALLS_DEFAULT_ACTION=a limit_syscalls clone,A0\&\&0x10000000==0x10000000,e1 unshare,e1  -- /bin/bash
+   for this use case there is a separate executable ban_CLONE_NEWUSER
    
    
 $ ./limit_syscalls execve exit write read open close mmap2  fstat64 access  mprotect set_thread_area -- /bin/echo qqq
