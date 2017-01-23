@@ -4,7 +4,7 @@
 #include <stdio.h>                      // for fprintf, perror, stderr
 #include <unistd.h>                     // for execve
 
-// gcc limit_syscalls.c -lseccomp -o limit_syscalls
+// gcc ban_CLONE_NEWUSER.c -lseccomp -o ban_CLONE_NEWUSER
 
 int main(int argc, char* argv[], char* envp[]) {
     
